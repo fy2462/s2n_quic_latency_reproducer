@@ -12,7 +12,7 @@ use image::io::Reader as ImageReader;
 use std::time::{self, Instant};
 
 const BIND_INTERFACE: &str = "0.0.0.0";
-const SERVER_IP: &str = "10.10.82.240";
+const SERVER_IP: &str = "10.10.80.22";
 const SERVER_PORT: u32 = 51111;
 const MARK_SEND_INTERVAL: u64 = 1;
 
@@ -93,13 +93,13 @@ async fn main() -> ResultType<()> {
         let mut frames = Vec::new();
         frames.push(frame_data);
         let frames_msg = create_msg(frames, &mut last_send_marked);
-        let frame_size = frames_msg.write_to_bytes().unwrap();
-        // println!("sended frame size {}", frame_size.len());
         conn_sender.send(&frames_msg).await.ok();
         let elapsed = now.elapsed();
         if elapsed < spf {
             tokio::time::sleep(spf - elapsed).await;
             // println!("Timestamp {:?}", time::Instant::now());
+        } else {
+            println!("Send slowly!!!");
         }
     }
     return Ok(());
