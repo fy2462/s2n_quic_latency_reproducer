@@ -8,11 +8,12 @@ use std::time;
 
 #[tokio::main()]
 async fn main() -> ResultType<()> {
-    let bind_addr = format!("{}:{}", "0.0.0.0", 50011)
+    let port = 51111;
+    let bind_addr = format!("{}:{}", "0.0.0.0", port)
         .parse()
         .expect("parse signaling server address error");
     let mut server_endpoint = server::new_server(bind_addr).expect("create server error");
-    println!("Start server demo");
+    println!("Start server demo, listning the port: {}", port);
     loop {
         tokio::select! {
             Some(mut new_conn) = server_endpoint.accept() => {

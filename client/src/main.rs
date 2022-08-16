@@ -13,6 +13,7 @@ use std::time::{self, Instant};
 
 const BIND_INTERFACE: &str = "0.0.0.0";
 const SERVER_IP: &str = "10.10.82.240";
+const SERVER_PORT: u32 = 51111;
 const MARK_SEND_INTERVAL: u64 = 1;
 
 #[inline]
@@ -51,16 +52,19 @@ fn create_msg(vp9s: Vec<EncodedVideoFrame>, last_send_marked: &mut Instant) -> F
 
 #[tokio::main()]
 async fn main() -> ResultType<()> {
-    println!("Start client demo");
+    println!(
+        "Start client demo, connecting the server {}:{}",
+        SERVER_IP, SERVER_PORT
+    );
 
     let local_addr = format!("{}:0", BIND_INTERFACE).parse().unwrap();
-    let server_addr = format!("{}:50011", SERVER_IP).parse().unwrap();
+    let server_addr = format!("{}:{}", SERVER_IP, SERVER_PORT).parse().unwrap();
 
     let mut client_conn = Connection::new_for_client_conn(server_addr, local_addr)
         .await
         .with_context(|| "Failed to neccect the server")?;
 
-    let img = ImageReader::open("test5.png")?.decode()?;
+    let img = ImageReader::open("image.png")?.decode()?;
 
     let fps = 25;
     let spf = time::Duration::from_secs_f32(1. / (fps as f32));
