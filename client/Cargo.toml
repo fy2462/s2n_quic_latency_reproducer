@@ -1,0 +1,19 @@
+[package]
+edition = "2021"
+name = "client"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "demo"
+path = "src/main.rs"
+
+[dependencies]
+hbb_common = {path = "libs/hbb_common"}
+image = "0.24"
+lazy_static = "1.4"
+num_cpus = "1.13"
+
+[workspace]
+members = ["libs/hbb_common"]

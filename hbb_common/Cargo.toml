@@ -1,0 +1,53 @@
+[package]
+authors = ["open-trade <info@opentradesolutions.com>"]
+edition = "2018"
+name = "hbb_common"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0"
+async-trait = "0.1"
+bytes = {version = "1.2", features = ["serde"]}
+confy = {git = "https://github.com/open-trade/confy"}
+directories-next = "2.0"
+dirs-next = "2.0"
+env_logger = "0.9"
+filetime = "0.2"
+futures = "0.3"
+futures-util = "0.3"
+lazy_static = "1.4"
+log = "0.4"
+protobuf = {version = "3.1", features = ["with-bytes"]}
+quinn = {version = "0.8", optional = true}
+rand = "0.8"
+regex = "1.4"
+rustls = {version = "0.20", default-features = false, features = ["quic"], optional = true}
+rustls-pemfile = "1"
+s2n-quic = {version = "1.8", optional = true}
+serde = "1.0"
+serde_derive = "1.0"
+serde_with = "2"
+socket2 = {version = "0.4", features = ["all"]}
+sodiumoxide = "0.2"
+tokio = {version = "1.20", features = ["full"]}
+tokio-socks = {git = "https://github.com/open-trade/tokio-socks"}
+tokio-util = {version = "0.7", features = ["full"]}
+zstd = "0.9"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+mac_address = "1.1"
+machine-uid = "0.2"
+
+[features]
+default = ["quic", "rustls_dangerous_configuration"]
+quic = ["s2n-quic"]
+rustls_dangerous_configuration = ["rustls/dangerous_configuration"]
+
+[build-dependencies]
+protobuf-codegen = {version = "3.1"}
+
+[dev-dependencies]
+serde_json = "1.0"
+toml = "0.5"
