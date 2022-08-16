@@ -13,7 +13,7 @@ async fn main() -> ResultType<()> {
         .parse()
         .expect("parse signaling server address error");
     let mut server_endpoint = server::new_server(bind_addr).expect("create server error");
-    println!("Start server demo, listning the port: {}", port);
+    println!("Start server demo, listening the port: {}", port);
     loop {
         tokio::select! {
             Some(mut new_conn) = server_endpoint.accept() => {
