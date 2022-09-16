@@ -11,7 +11,7 @@ use protobuf::Message;
 use rustls;
 use s2n_quic::{
     client::Connect,
-    provider::{io::tokio::Builder as IoBuilder, limits::Limits},
+    provider::{io::tokio::Builder as IoBuilder},
     stream::BidirectionalStream,
     Client, Server,
 };
@@ -32,11 +32,11 @@ use tokio::{
 use tokio_util::codec::Framed;
 
 pub const SERVER_NAME: &str = "localhost";
-const ACK_LATENCY: u64 = 0;
-const MAX_HANDSHAKE_DURATION: u64 = 3;
-const MAX_ACK_RANGES: u8 = 100;
-const CONN_TIMEOUT: u64 = 5;
-const KEEP_ALIVE_PERIOD: u64 = 2;
+// const ACK_LATENCY: u64 = 0;
+// const MAX_HANDSHAKE_DURATION: u64 = 3;
+// const MAX_ACK_RANGES: u8 = 100;
+// const CONN_TIMEOUT: u64 = 5;
+// const KEEP_ALIVE_PERIOD: u64 = 2;
 
 struct Cert<'a> {
     cert_pom: &'a str,
@@ -154,6 +154,59 @@ impl SendAPI for Connection {
     }
 }
 
+#[derive(Debug)]
+pub struct Limits {
+    /// The maximum bits/sec for each connection
+    pub max_throughput: u64,
+
+    /// The expected RTT in milliseconds
+    pub expected_rtt: u64,
+}
+
+impl Limits {
+
+    pub fn new() -> Self {
+        Limits { max_throughput: 5_000_000, expected_rtt: 300 }
+    }
+
+    pub fn limits(&self) -> s2n_quic::provider::limits::Limits {
+        let data_window = self.data_window();
+
+        s2n_quic::provider::limits::Limits::default()
+            .with_data_window(data_window)
+            .unwrap()
+            .with_max_send_buffer_size(data_window.min(u32::MAX as _) as _)
+            .unwrap()
+            .with_bidirectional_local_data_window(data_window)
+            .unwrap()
+            .with_bidirectional_remote_data_window(data_window)
+            .unwrap()
+            .with_unidirectional_data_window(data_window)
+            .unwrap()
+    }
+
+    const fn compute_data_window(&self, mbps: u64, rtt: Duration, rtt_count: u64) -> u64 {
+        // ideal throughput in Mbps
+        let mut window = mbps;
+        // Mbit/sec * 125 -> bytes/ms
+        window *= 125;
+        // bytes/ms * ms/RTT -> bytes/RTT
+        window *= rtt.as_millis() as u64;
+        // bytes/RTT * rtt_count -> N * bytes/RTT
+        window *= rtt_count;
+    
+        window as u64
+    }
+
+    fn data_window(&self) -> u64 {
+        self.compute_data_window(
+            self.max_throughput,
+            core::time::Duration::from_millis(self.expected_rtt),
+            2,
+        )
+    }
+}
+
 impl Connection {
     pub async fn new_conn_wrapper(stream: BidirectionalStream) -> ResultType<Self> {
         let frame_wrapper = Framed::new(stream, BytesCodec::new());
@@ -195,25 +248,9 @@ impl Connection {
             .with_receive_address(local_addr)?
             .build()?;
 
-        let limits = Limits::new()
-            .with_max_ack_delay(Duration::from_millis(ACK_LATENCY))
-            .expect("set ack delay failed.");
-        limits
-            .with_max_ack_ranges(MAX_ACK_RANGES)
-            .expect("set ack max rangees failed.");
-        limits
-            .with_max_handshake_duration(Duration::from_secs(MAX_HANDSHAKE_DURATION))
-            .expect("set max handshake duration failed.");
-        limits
-            .with_max_idle_timeout(Duration::from_secs(CONN_TIMEOUT))
-            .expect("set max idle timeout failed.");
-        limits
-            .with_max_keep_alive_period(Duration::from_secs(KEEP_ALIVE_PERIOD))
-            .expect("set max keep alive period failed.");
-
         let client = Client::builder()
             .with_tls(Path::new(CERT.cert_pom))?
-            .with_limits(limits)?
+            .with_limits(Limits::new().limits())?
             .with_io(io)?
             .start()
             .unwrap();
@@ -272,25 +309,10 @@ pub mod server {
         let io = IoBuilder::default()
             .with_receive_address(bind_addr)?
             .build()?;
-        let limits = Limits::new()
-            .with_max_ack_delay(Duration::from_millis(ACK_LATENCY))
-            .expect("set ack delay failed.");
-        limits
-            .with_max_ack_ranges(MAX_ACK_RANGES)
-            .expect("set ack max rangees failed.");
-        limits
-            .with_max_handshake_duration(Duration::from_secs(MAX_HANDSHAKE_DURATION))
-            .expect("set mac handshake duration failed.");
-        limits
-            .with_max_idle_timeout(Duration::from_secs(CONN_TIMEOUT))
-            .expect("set max idle timeout failed.");
-        limits
-            .with_max_keep_alive_period(Duration::from_secs(KEEP_ALIVE_PERIOD))
-            .expect("set max keep alive period failed.");
 
         let server = Server::builder()
             .with_tls((Path::new(CERT.cert_pom), Path::new(CERT.key_pom)))?
-            .with_limits(limits)?
+            .with_limits(Limits::new().limits())?
             .with_io(io)?
             .start()
             .unwrap();

@@ -6,11 +6,15 @@ There is the high latency wiht s2n_quic to send the data, the code is reproducer
 
 ## Prepare
 
-1. Computer A run the demo server, listen the port 51111.
+1. Make sure we have ssl dependency
+
+    > sudo apt-get install openssl libssl-dev
+
+2. Computer A run the demo server, listen the port 51111.
 
     > cd server && cargo run --release
 
-2. Computer B run the demo client, connect the server IP, please modify the `SERVER_IP` field in `client/main.rs`.
+3. Computer B run the demo client, connect the server IP, please modify the `SERVER_IP` field in `client/main.rs`.
 
     > cd client && cargo run --release
 
