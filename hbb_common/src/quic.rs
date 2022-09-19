@@ -166,7 +166,8 @@ pub struct Limits {
 impl Limits {
 
     pub fn new() -> Self {
-        Limits { max_throughput: 10, expected_rtt: 300 }
+        // 50 Mbits/s and RTT 200 ms
+        Limits { max_throughput: 50, expected_rtt: 200 }
     }
 
     pub fn limits(&self) -> s2n_quic::provider::limits::Limits {
