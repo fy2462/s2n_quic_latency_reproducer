@@ -156,7 +156,7 @@ impl SendAPI for Connection {
 
 #[derive(Debug)]
 pub struct Limits {
-    /// The maximum bits/sec for each connection
+    /// The maximum Mbits/sec for each connection
     pub max_throughput: u64,
 
     /// The expected RTT in milliseconds
@@ -166,7 +166,7 @@ pub struct Limits {
 impl Limits {
 
     pub fn new() -> Self {
-        Limits { max_throughput: 5_000_000, expected_rtt: 300 }
+        Limits { max_throughput: 10, expected_rtt: 300 }
     }
 
     pub fn limits(&self) -> s2n_quic::provider::limits::Limits {
